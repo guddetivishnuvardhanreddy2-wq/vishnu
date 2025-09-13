@@ -1,0 +1,340 @@
+import React, { useState, useEffect } from 'react';
+import { Play, Bug, BookOpen, Code, CheckCircle, AlertCircle, Lightbulb, Target, Zap } from 'lucide-react';
+
+const CodeLearningPlatform = () => {
+  const [activeTab, setActiveTab] = useState('tutorial');
+  const [code, setCode] = useState(`function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+console.log(fibonacci(5));`);
+  
+  const [output, setOutput] = useState('');
+  const [errors, setErrors] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [currentExercise, setCurrentExercise] = useState(0);
+  const [tutorialStep, setTutorialStep] = useState(0);
+
+  const exercises = [
+    {
+      title: "Sum of Array",
+      description: "Write a function that returns the sum of all numbers in an array",
+      template: "function sumArray(arr) {\n  // Your code here\n}",
+      testCase: "sumArray([1, 2, 3, 4]) should return 10",
+      solution: "function sumArray(arr) {\n  return arr.reduce((sum, num) => sum + num, 0);\n}"
+    },
+    {
+      title: "Find Maximum",
+      description: "Write a function that finds the maximum number in an array",
+      template: "function findMax(arr) {\n  // Your code here\n}",
+      testCase: "findMax([3, 7, 2, 9, 1]) should return 9",
+      solution: "function findMax(arr) {\n  return Math.max(...arr);\n}"
+    },
+    {
+      title: "Reverse String",
+      description: "Write a function that reverses a string",
+      template: "function reverseString(str) {\n  // Your code here\n}",
+      testCase: "reverseString('hello') should return 'olleh'",
+      solution: "function reverseString(str) {\n  return str.split('').reverse().join('');\n}"
+    }
+  ];
+
+  const tutorialSteps = [
+    {
+      title: "Variables & Data Types",
+      content: "Let's start with JavaScript basics. Variables store data that can be used later.",
+      code: "let name = 'Alice';\nlet age = 25;\nlet isStudent = true;\n\nconsole.log(name, age, isStudent);",
+      explanation: "Here we declare three variables with different data types: string, number, and boolean."
+    },
+    {
+      title: "Functions",
+      content: "Functions are reusable blocks of code that perform specific tasks.",
+      code: "function greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet('World'));",
+      explanation: "This function takes a parameter 'name' and returns a greeting message."
+    },
+    {
+      title: "Arrays & Loops",
+      content: "Arrays store multiple values, and loops help us iterate through them.",
+      code: "let fruits = ['apple', 'banana', 'orange'];\n\nfor (let i = 0; i < fruits.length; i++) {\n  console.log(fruits[i]);\n}",
+      explanation: "We use a for loop to print each fruit in the array."
+    }
+  ];
+
+  const analyzeCode = (codeString) => {
+    const newErrors = [];
+    const newSuggestions = [];
+
+    // Simple error detection
+    if (!codeString.trim()) {
+      newErrors.push({ line: 1, message: "Code is empty", type: "error" });
+      setErrors(newErrors);
+      setSuggestions([]);
+      return;
+    }
+
+    // Check for common syntax issues
+    if (codeString.includes('function') && !codeString.includes('{')) {
+      newErrors.push({ line: 1, message: "Missing opening brace after function declaration", type: "error" });
+    }
+
+    const openBraces = (codeString.match(/{/g) || []).length;
+    const closeBraces = (codeString.match(/}/g) || []).length;
+    if (openBraces !== closeBraces) {
+      newErrors.push({ line: 1, message: "Mismatched braces", type: "error" });
+    }
+
+    // Performance suggestions
+    if (codeString.includes('fibonacci') && codeString.includes('return fibonacci')) {
+      newSuggestions.push({
+        type: "performance",
+        message: "Consider using memoization or iterative approach for better performance",
+        fix: "This recursive fibonacci has exponential time complexity"
+      });
+    }
+
+    if (codeString.includes('console.log') && !codeString.includes('//')) {
+      newSuggestions.push({
+        type: "best-practice",
+        message: "Consider adding comments to explain your code",
+        fix: "Good documentation makes code more maintainable"
+      });
+    }
+
+    setErrors(newErrors);
+    setSuggestions(newSuggestions);
+  };
+
+  const runCode = () => {
+    try {
+      // Simple code execution simulation
+      if (code.includes('fibonacci(5)')) {
+        setOutput('Output:\n5');
+      } else if (code.includes('sumArray([1, 2, 3, 4])')) {
+        setOutput('Output:\n10');
+      } else if (code.includes('console.log')) {
+        const matches = code.match(/console\.log\(([^)]+)\)/g);
+        if (matches) {
+          setOutput('Output:\n' + matches.map(match => 
+            match.replace('console.log(', '').replace(')', '')
+          ).join('\n'));
+        }
+      } else {
+        setOutput('Code executed successfully!');
+      }
+    } catch (error) {
+      setOutput('Error: ' + error.message);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => analyzeCode(code), 500);
+    return () => clearTimeout(timer);
+  }, [code]);
+
+  const loadExercise = (index) => {
+    setCurrentExercise(index);
+    setCode(exercises[index].template);
+    setActiveTab('exercise');
+  };
+
+  const loadTutorialStep = (index) => {
+    setTutorialStep(index);
+    setCode(tutorialSteps[index].code);
+    setActiveTab('tutorial');
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-7xl mx-auto">
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-indigo-900 mb-2 flex items-center justify-center gap-2">
+            <Code className="h-10 w-10" />
+            CodeMaster Pro
+          </h1>
+          <p className="text-indigo-600">Interactive Programming Education Platform</p>
+        </header>
+
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap justify-center gap-2 mb-6">
+          {[
+            { id: 'tutorial', label: 'Tutorials', icon: BookOpen },
+            { id: 'exercise', label: 'Exercises', icon: Target },
+            { id: 'playground', label: 'Playground', icon: Zap }
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === id
+                  ? 'bg-indigo-600 text-white shadow-lg'
+                  : 'bg-white text-indigo-600 hover:bg-indigo-50'
+              }`}
+            >
+              <Icon className="h-5 w-5" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Sidebar */}
+          <div className="space-y-4">
+            {activeTab === 'tutorial' && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Tutorial Steps</h3>
+                <div className="space-y-2">
+                  {tutorialSteps.map((step, index) => (
+                    <button
+                      key={index}
+                      onClick={() => loadTutorialStep(index)}
+                      className={`w-full text-left p-3 rounded-lg transition-all ${
+                        tutorialStep === index
+                          ? 'bg-indigo-100 border-2 border-indigo-300'
+                          : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                      }`}
+                    >
+                      <div className="font-medium">{index + 1}. {step.title}</div>
+                      <div className="text-sm text-gray-600 mt-1">{step.content}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'exercise' && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Practice Exercises</h3>
+                <div className="space-y-2">
+                  {exercises.map((exercise, index) => (
+                    <button
+                      key={index}
+                      onClick={() => loadExercise(index)}
+                      className={`w-full text-left p-3 rounded-lg transition-all ${
+                        currentExercise === index
+                          ? 'bg-green-100 border-2 border-green-300'
+                          : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                      }`}
+                    >
+                      <div className="font-medium flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        {exercise.title}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">{exercise.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Analysis Panel */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Bug className="h-5 w-5" />
+                Code Analysis
+              </h3>
+              
+              {errors.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="font-medium text-red-700 mb-2 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    Errors
+                  </h4>
+                  {errors.map((error, index) => (
+                    <div key={index} className="bg-red-50 border-l-4 border-red-400 p-3 mb-2">
+                      <p className="text-red-700 text-sm">{error.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {suggestions.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-blue-700 mb-2 flex items-center gap-1">
+                    <Lightbulb className="h-4 w-4" />
+                    Suggestions
+                  </h4>
+                  {suggestions.map((suggestion, index) => (
+                    <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-2">
+                      <p className="text-blue-700 text-sm font-medium">{suggestion.message}</p>
+                      <p className="text-blue-600 text-xs mt-1">{suggestion.fix}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {errors.length === 0 && suggestions.length === 0 && (
+                <div className="text-center py-4">
+                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-green-700">Code looks good!</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {activeTab === 'tutorial' && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                  {tutorialSteps[tutorialStep].title}
+                </h3>
+                <p className="text-gray-600 mb-4">{tutorialSteps[tutorialStep].content}</p>
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                  <p className="text-blue-800">{tutorialSteps[tutorialStep].explanation}</p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'exercise' && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  {exercises[currentExercise].title}
+                </h3>
+                <p className="text-gray-600 mb-4">{exercises[currentExercise].description}</p>
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                  <p className="text-yellow-800 font-medium">Test Case:</p>
+                  <p className="text-yellow-700">{exercises[currentExercise].testCase}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Code Editor */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="bg-gray-800 text-white p-4 flex items-center justify-between">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Code className="h-5 w-5" />
+                  Code Editor
+                </h4>
+                <button
+                  onClick={runCode}
+                  className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  <Play className="h-4 w-4" />
+                  Run Code
+                </button>
+              </div>
+              <textarea
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="w-full h-64 p-4 font-mono text-sm border-0 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                placeholder="Write your code here..."
+                spellCheck={false}
+              />
+            </div>
+
+            {/* Output */}
+            {output && (
+              <div className="bg-gray-900 text-green-400 rounded-xl p-6">
+                <h4 className="font-medium mb-2 text-white">Output:</h4>
+                <pre className="whitespace-pre-wrap font-mono text-sm">{output}</pre>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CodeLearningPlatform;
